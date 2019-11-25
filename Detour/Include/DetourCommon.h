@@ -362,6 +362,16 @@ inline bool dtOverlapQuantBounds(const unsigned short amin[3], const unsigned sh
 	return overlap;
 }
 
+inline bool dtOverlapQuantBounds2D(const unsigned short amin[3], const unsigned short amax[3],
+	const unsigned short bmin[3], const unsigned short bmax[3])
+{
+	bool overlap = true;
+	overlap = (amin[0] > bmax[0] || amax[0] < bmin[0]) ? false : overlap;
+	//overlap = (amin[1] > bmax[1] || amax[1] < bmin[1]) ? false : overlap;
+	overlap = (amin[2] > bmax[2] || amax[2] < bmin[2]) ? false : overlap;
+	return overlap;
+}
+
 /// Determines if two axis-aligned bounding boxes overlap.
 ///  @param[in]		amin	Minimum bounds of box A. [(x, y, z)]
 ///  @param[in]		amax	Maximum bounds of box A. [(x, y, z)]
@@ -375,6 +385,16 @@ inline bool dtOverlapBounds(const float* amin, const float* amax,
 	bool overlap = true;
 	overlap = (amin[0] > bmax[0] || amax[0] < bmin[0]) ? false : overlap;
 	overlap = (amin[1] > bmax[1] || amax[1] < bmin[1]) ? false : overlap;
+	overlap = (amin[2] > bmax[2] || amax[2] < bmin[2]) ? false : overlap;
+	return overlap;
+}
+
+inline bool dtOverlapBounds2D(const float* amin, const float* amax,
+	const float* bmin, const float* bmax)
+{
+	bool overlap = true;
+	overlap = (amin[0] > bmax[0] || amax[0] < bmin[0]) ? false : overlap;
+	//overlap = (amin[1] > bmax[1] || amax[1] < bmin[1]) ? false : overlap;
 	overlap = (amin[2] > bmax[2] || amax[2] < bmin[2]) ? false : overlap;
 	return overlap;
 }

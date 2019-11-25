@@ -826,6 +826,122 @@ void dtNavMeshQuery::queryPolygonsInTile(const dtMeshTile* tile, const float* qm
 		query->process(tile, polys, polyRefs, n);
 }
 
+void dtNavMeshQuery::queryPolygonsInTile2D(const dtMeshTile* tile, const float* qmin, const float* qmax,
+	const dtQueryFilter* filter, dtPolyQuery* query) const
+{
+	dtAssert(m_nav);
+	static const int batchSize = 32;
+	dtPolyRef polyRefs[batchSize];
+	dtPoly* polys[batchSize];
+	int n = 0;
+
+	if (tile->bvTree)
+	{
+		const dtBVNode* node = &tile->bvTree[0];
+		const dtBVNode* end = &tile->bvTree[tile->header->bvNodeCount];
+		const float* tbmin = tile->header->bmin;
+		const float* tbmax = tile->header->bmax;
+		const float qfac = tile->header->bvQuantFactor;
+
+		// Calculate quantized box
+		unsigned short bmin[3], bmax[3];
+		// dtClamp query box to world box.
+		float minx = dtClamp(qmin[0], tbmin[0], tbmax[0]) - tbmin[0];
+		float miny = dtClamp(qmin[1], tbmin[1], tbmax[1]) - tbmin[1];
+		float minz = dtClamp(qmin[2], tbmin[2], tbmax[2]) - tbmin[2];
+		float maxx = dtClamp(qmax[0], tbmin[0], tbmax[0]) - tbmin[0];
+		float maxy = dtClamp(qmax[1], tbmin[1], tbmax[1]) - tbmin[1];
+		float maxz = dtClamp(qmax[2], tbmin[2], tbmax[2]) - tbmin[2];
+		// Quantize
+		bmin[0] = (unsigned short)(qfac * minx) & 0xfffe;
+		bmin[1] = (unsigned short)(qfac * miny) & 0xfffe;
+		bmin[2] = (unsigned short)(qfac * minz) & 0xfffe;
+		bmax[0] = (unsigned short)(qfac * maxx + 1) | 1;
+		bmax[1] = (unsigned short)(qfac * maxy + 1) | 1;
+		bmax[2] = (unsigned short)(qfac * maxz + 1) | 1;
+
+		// Traverse tree
+		const dtPolyRef base = m_nav->getPolyRefBase(tile);
+		while (node < end)
+		{
+			const bool overlap = dtOverlapQuantBounds2D(bmin, bmax, node->bmin, node->bmax);
+			const bool isLeafNode = node->i >= 0;
+
+			if (isLeafNode && overlap)
+			{
+				dtPolyRef ref = base | (dtPolyRef)node->i;
+				if (filter->passFilter(ref, tile, &tile->polys[node->i]))
+				{
+					polyRefs[n] = ref;
+					polys[n] = &tile->polys[node->i];
+
+					if (n == batchSize - 1)
+					{
+						query->process(tile, polys, polyRefs, batchSize);
+						n = 0;
+					}
+					else
+					{
+						n++;
+					}
+				}
+			}
+
+			if (overlap || isLeafNode)
+				node++;
+			else
+			{
+				const int escapeIndex = -node->i;
+				node += escapeIndex;
+			}
+		}
+	}
+	else
+	{
+		float bmin[3], bmax[3];
+		const dtPolyRef base = m_nav->getPolyRefBase(tile);
+		for (int i = 0; i < tile->header->polyCount; ++i)
+		{
+			dtPoly* p = &tile->polys[i];
+			// Do not return off-mesh connection polygons.
+			if (p->getType() == DT_POLYTYPE_OFFMESH_CONNECTION)
+				continue;
+			// Must pass filter
+			const dtPolyRef ref = base | (dtPolyRef)i;
+			if (!filter->passFilter(ref, tile, p))
+				continue;
+			// Calc polygon bounds.
+			const float* v = &tile->verts[p->verts[0] * 3];
+			dtVcopy(bmin, v);
+			dtVcopy(bmax, v);
+			for (int j = 1; j < p->vertCount; ++j)
+			{
+				v = &tile->verts[p->verts[j] * 3];
+				dtVmin(bmin, v);
+				dtVmax(bmax, v);
+			}
+			if (dtOverlapBounds2D(qmin, qmax, bmin, bmax))
+			{
+				polyRefs[n] = ref;
+				polys[n] = p;
+
+				if (n == batchSize - 1)
+				{
+					query->process(tile, polys, polyRefs, batchSize);
+					n = 0;
+				}
+				else
+				{
+					n++;
+				}
+			}
+		}
+	}
+	// Process the last polygons that didn't make a full batch.
+	if (n > 0)
+		query->process(tile, polys, polyRefs, n);
+}
+
 class dtCollectPolysQuery : public dtPolyQuery
 {
 	dtPolyRef* m_polys;
@@ -924,7 +1040,7 @@ dtStatus dtNavMeshQuery::queryPolygons(const float* center, const float* halfExt
 			const int nneis = m_nav->getTilesAt(x,y,neis,MAX_NEIS);
 			for (int j = 0; j < nneis; ++j)
 			{
-				queryPolygonsInTile(neis[j], bmin, bmax, filter, query);
+				queryPolygonsInTile2D(neis[j], bmin, bmax, filter, query);
 			}
 		}
 	}

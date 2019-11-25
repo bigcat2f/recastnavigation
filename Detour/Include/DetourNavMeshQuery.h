@@ -513,6 +513,9 @@ private:
 	/// Queries polygons within a tile.
 	void queryPolygonsInTile(const dtMeshTile* tile, const float* qmin, const float* qmax,
 							 const dtQueryFilter* filter, dtPolyQuery* query) const;
+	/// Queries polygons within a tile 2D. ºöÂÔ¸ß¶È²î by lzq
+	void queryPolygonsInTile2D(const dtMeshTile* tile, const float* qmin, const float* qmax,
+							const dtQueryFilter* filter, dtPolyQuery* query) const;
 
 	/// Returns portal points between two polygons.
 	dtStatus getPortalPoints(dtPolyRef from, dtPolyRef to, float* left, float* right,
