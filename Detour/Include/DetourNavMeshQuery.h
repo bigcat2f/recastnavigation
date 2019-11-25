@@ -204,6 +204,11 @@ public:
 							  float* straightPath, unsigned char* straightPathFlags, dtPolyRef* straightPathRefs,
 							  int* straightPathCount, const int maxStraightPath, const int options = 0) const;
 
+	dtStatus findStraightPath(const float* startPos, const float* endPos,
+		const dtPolyRef* path, const int pathSize,
+		float* straightPath, unsigned char* straightPathFlags, dtPolyRef* straightPathRefs, int* areaIds,
+		int* straightPathCount, const int maxStraightPath, const int options = 0) const;
+
 	///@}
 	/// @name Sliced Pathfinding Functions
 	/// Common use case:
@@ -468,6 +473,7 @@ public:
 	///  @param[out]	closest		The closest point. [(x, y, z)]
 	/// @returns The status flags for the query.
 	dtStatus closestPointOnPolyBoundary(dtPolyRef ref, const float* pos, float* closest) const;
+	dtStatus closestPointOnPolyBoundary(dtPolyRef ref, const float* pos, float* closest, int& areaId) const;
 	
 	/// Gets the height of the polygon at the provided position using the height detail. (Most accurate.)
 	///  @param[in]		ref			The reference id of the polygon.
@@ -515,6 +521,8 @@ private:
 	/// Returns portal points between two polygons.
 	dtStatus getPortalPoints(dtPolyRef from, dtPolyRef to, float* left, float* right,
 							 unsigned char& fromType, unsigned char& toType) const;
+	dtStatus getPortalPoints(dtPolyRef from, dtPolyRef to, float* left, float* right,
+							 unsigned char& fromType, unsigned char& toType, int& fromArea, int& toArea) const;
 	dtStatus getPortalPoints(dtPolyRef from, const dtPoly* fromPoly, const dtMeshTile* fromTile,
 							 dtPolyRef to, const dtPoly* toPoly, const dtMeshTile* toTile,
 							 float* left, float* right) const;
@@ -529,10 +537,16 @@ private:
 	dtStatus appendVertex(const float* pos, const unsigned char flags, const dtPolyRef ref,
 						  float* straightPath, unsigned char* straightPathFlags, dtPolyRef* straightPathRefs,
 						  int* straightPathCount, const int maxStraightPath) const;
+	dtStatus appendVertex(const float* pos, const unsigned char flags, const dtPolyRef ref, const int areaId,
+						  float* straightPath, unsigned char* straightPathFlags, dtPolyRef* straightPathRefs, int* areaIds,
+						  int* straightPathCount, const int maxStraightPath) const;
 
 	// Appends intermediate portal points to a straight path.
 	dtStatus appendPortals(const int startIdx, const int endIdx, const float* endPos, const dtPolyRef* path,
 						   float* straightPath, unsigned char* straightPathFlags, dtPolyRef* straightPathRefs,
+						   int* straightPathCount, const int maxStraightPath, const int options) const;
+	dtStatus appendPortals(const int startIdx, const int endIdx, const float* endPos, const dtPolyRef* path,
+						   float* straightPath, unsigned char* straightPathFlags, dtPolyRef* straightPathRefs, int* areaIds,
 						   int* straightPathCount, const int maxStraightPath, const int options) const;
 
 	// Gets the path leading to the specified end node.
