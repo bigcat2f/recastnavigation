@@ -5,7 +5,7 @@ if [ -d "build" ]; then
   make -j8
 else
   mkdir build && cd build
-  cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=release -DRECASTNAVIGATION_STATIC=ON -DRECASTNAVIGATION_DEMO=OFF -DRECASTNAVIGATION_TESTS=OFF -DRECASTNAVIGATION_EXAMPLES=OFF ../
+  cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=debug -DRECASTNAVIGATION_STATIC=OFF -DRECASTNAVIGATION_DEMO=OFF -DRECASTNAVIGATION_TESTS=OFF -DRECASTNAVIGATION_EXAMPLES=OFF ../
   make -j8
 fi
 
@@ -18,12 +18,12 @@ function copyLib()
     rm -rf lib
   fi
   mkdir lib
-  cp ../build/$libname/lib$libname.a ./lib/
+  cp ../build/$libname/lib$libname.so ./lib/
 }
 
-copyLib Detour
-copyLib DetourTileCache
-copyLib Recast
+#copyLib Detour
+#copyLib DetourTileCache
+#copyLib Recast
 
 cd ../
 ####################################
